@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Google Cast Chrome Sender SDK: Hello Videos</title>
+    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background-color: #e6e8eb;
+            min-width: 500px;
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        .navbar {
+            background-color: #0d2237;
+            color: #ffffff;
+            padding: 10px;
+        }
+        .navbar .navbarTitle {
+            font-size: 2em;
+        }
+
+        .header {
+            text-align: center;
+            background-color: #ffffff;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .header .headerTitle {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .header button {
+            color: #ffffff;
+            font-weight: 400;
+            text-align: center;
+            border: 1px solid transparent;
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: .25rem;
+            background-color: #1c4875;
+            border-color: #1c4875;
+            margin-top: 10px;
+        }
+
+        .content {
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .content .divMedia {
+            float: left;
+            padding: 25px;
+            box-sizing: border-box;
+        }
+        .content .divMediaSelected {
+            background-color: #A4B5C7;
+            border-color: #A4B5C7;
+            border-radius: .25rem;
+            border: 1px solid transparent;
+        }
+        .content .divMedia .divMediaBox {
+            background-color: #ffffff;
+            border-bottom-left-radius: calc(.25rem - 1px);
+            border-bottom-right-radius: calc(.25rem - 1px);
+        }
+        .content .divMedia .divMediaBox img {
+            width: 100%;
+            height: 250px;
+            border-top-left-radius: calc(.25rem - 1px);
+            border-top-right-radius: calc(.25rem - 1px);
+            text-align: center;
+            background-color: #0d2237;
+        }
+        .content .divMedia .divMediaBox .divMediaLabel {
+            height: 50px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #ffffff;
+            box-sizing: border-box;
+            height: 50px;
+
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+        }
+        .footerPlayerButtons {
+            float: left;
+            margin-right: 15px;
+        }
+        .footer .footerPlayerButtons .footerButton {
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .footer .footerPlayerButtons .footerButtonPlay {
+            width: 0;
+            height: 0;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-left: 10px solid #1c4875;
+        }
+        .footer .footerPlayerButtons .footerButtonPause {
+            width: 20px;
+            height: 20px;
+            background-color: #1c4875;
+        }
+        .footer .footerPlayerButtons .footerButtonPause .footerButtonPauseMiddlePart {
+            width: 6.666px;
+            height: 20px;
+            margin-left: 6.666px;
+            background-color: #FFFFFF;
+        }
+        .footer .footerPlayerButtons .footerButtonStop {
+            width: 20px;
+            height: 20px;
+            background-color: #1c4875;
+        }
+        .footer .time {
+            float: left;
+            margin-right: 15px;
+        }
+        .footer .inputProgressBox {
+            float: left;
+            width: 50%;
+            min-width: 150px;
+        }
+        .footer .inputProgressBox .inputProgress {
+            width: 50%;
+            min-width: 150px;
+        }
+
+        @media only screen and (min-width: 0px) {
+            .content .divMedia { width: 100%; }
+        }
+        @media only screen and (min-width: 600px) {
+            .content .divMedia { width: 50%; }
+        }
+        @media only screen and (min-width: 768px) {
+            .content .divMedia { width: 33.333%; }
+        }
+        @media only screen and (min-width: 992px) {
+            .content .divMedia { width: 25%; }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <div class="navbar">
+            <span id="navbarTitle" class="navbarTitle">Waiting for activation</span>
+        </div>
+        <div class="header">
+            <div id="headerTitle" class="headerTitle"></div>
+            <div id="headerDescription"></div>
+            <button id="headerConnectButton">Connect to ChromeCast</button>
+            <button id="headerDisconnectButton">Disconnect</button>
+        </div>
+        <div class="content">
+            <div id="contentMediaList"></div>
+            <div style="clear:both;"></div>
+        </div>
+        <div class="footer">
+            <div class="footerPlayerButtons">
+                <div id="footerButtonPlay" class="footerButton footerButtonPlay"></div>
+                <div id="footerButtonPause" class="footerButton footerButtonPause">
+                    <div class="footerButtonPauseMiddlePart"></div>
+                </div>
+                <div id="footerButtonStop" class="footerButton footerButtonStop"></div>
+            </div>
+            <div id="time" class="time">
+                <span id="timeCurrent"></span> :
+                <span id="timeTotal"></span>
+            </div>
+            <div class="inputProgressBox">
+                <input id="inputProgress" class="inputProgress" type="range" min="1" max="100" value="1" step="1">
+            </div>
+        </div>
+    </main>
+</body>
+
+<script>
+
+"use strict";
+
+/// CUSTOM DATA ///
+
+var folderName = '{tmp}';
+var media = {media};
+
+/// CUSTOM DATA ///
+
+var RESOURCES = {
+    TITLE_INIT: 'Waiting for activation',
+    TITLE_READY: 'Ready to play',
+    MEDIA_FOUND: ' media found',
+    CHROMECAST_NOT_AVAILABLE: 'Chromecast not available',
+};
+
+
+
+window['__onGCastApiAvailable'] = function (isAvailable) {
+    if (isAvailable) {
+        var castModule = CastModule();
+        var pageHelper = PageHelper();
+        castModule.init(pageHelper);
+        pageHelper.init(castModule);
+        castModule.initializeCastApi();
+        pageHelper.renderPage();
+    } else {
+        alert(RESOURCES.CHROMECAST_NOT_AVAILABLE);
+    }
+};
+
+function g_IsUndefinedOrEmptyOrNull(obj) {
+    return (obj === undefined || obj === null || obj.length === 0)
+}
+
+
+
+function PageHelper() {
+
+    var g_CastModule = null;
+
+    var g_headerTitle = null;
+    var g_headerDescription = null;
+    var g_contentMediaList = null;
+    var g_headerConnectButton = null;
+    var g_headerDisconnectButton = null;
+    var g_footerButtonPlay = null;
+    var g_footerButtonPause = null;
+    var g_footerButtonStop = null;
+    var g_inputProgress = null;
+    var g_time = null;
+    var g_timeTotal = null;
+    var g_timeCurrent = null;
+    var g_inputProgress = null;
+    var g_navbarTitle = null;
+
+    function init(castModule) {
+        g_CastModule = castModule;
+        g_headerTitle = document.getElementById('headerTitle');
+        g_headerDescription = document.getElementById('headerDescription');
+        g_contentMediaList = document.getElementById('contentMediaList');
+        g_headerConnectButton = document.getElementById('headerConnectButton');
+        g_headerDisconnectButton = document.getElementById('headerDisconnectButton');
+        g_footerButtonPlay = document.getElementById('footerButtonPlay');
+        g_footerButtonPause = document.getElementById('footerButtonPause');
+        g_footerButtonStop = document.getElementById('footerButtonStop');
+        g_inputProgress = document.getElementById('inputProgress');
+        g_time = document.getElementById('time');
+        g_timeTotal = document.getElementById('timeTotal');
+        g_timeCurrent = document.getElementById('timeCurrent');
+        g_inputProgress = document.getElementById('inputProgress');
+        g_navbarTitle = document.getElementById('navbarTitle');
+    }
+
+    function _checkForReadiness() {
+        if (g_IsUndefinedOrEmptyOrNull(g_CastModule))
+            throw new Error("g_CastModule required");
+    }
+
+    function renderPage() {
+        _checkForReadiness();
+
+        g_headerTitle.innerHTML = folderName;
+        g_headerDescription.innerHTML = media.length + RESOURCES.MEDIA_FOUND;
+
+        for (var index = 0, len = media.length; index < len; index++) {
+            contentMediaList.appendChild(_renderMedia(index));
+        }
+
+        g_headerConnectButton.onclick = function () {
+            g_CastModule.launchApp();
+        }
+        g_headerDisconnectButton.onclick = function () {
+            g_CastModule.stopApp();
+        }
+        g_footerButtonPlay.onclick = function () {
+            g_CastModule.playMedia();
+        }
+        g_footerButtonPause.onclick = function () {
+            g_CastModule.playMedia();
+        }
+        g_footerButtonStop.onclick = function () {
+            g_CastModule.stopMedia();
+        }
+        g_inputProgress.onmouseup = function (value) {
+            g_CastModule.seekMedia(value);
+        }
+
+        _showElement(g_headerConnectButton, true);
+        _showElement(g_headerDisconnectButton, false);
+        _showElement(g_footerButtonPlay, true);
+        _showElement(g_footerButtonPause, false);
+        _showElement(g_time, false);
+    }
+
+    function _renderMedia(index) {
+        var divMedia = document.createElement('div');
+
+        var image = document.createElement('img');
+        image.setAttribute('src', media[index].img)
+        image.onclick = (function (idx) {
+            return function () {
+                g_CastModule.selectMedia(idx);
+                _cleanDivMediaSelected();
+                divMedia.classList.add('divMediaSelected');
+            }
+        })(index); // oh snap, IIFE
+
+        var divMediaLabel = document.createElement('div');
+        divMediaLabel.setAttribute('class', 'divMediaLabel');
+        divMediaLabel.innerText = media[index].title;
+
+        var divMediaBox = document.createElement('div');
+        divMediaBox.setAttribute('class', 'divMediaBox');
+        divMediaBox.appendChild(image);
+        divMediaBox.appendChild(divMediaLabel);
+
+        divMedia.setAttribute('class', 'divMedia');
+        divMedia.appendChild(divMediaBox);
+        return divMedia;
+    }
+
+    function _cleanDivMediaSelected() {
+        var elements = document.getElementsByClassName('divMediaSelected');
+        for (var index = 0, len = elements.length; index < len; index++) {
+            elements[index].classList.remove('divMediaSelected');
+        }
+    }
+
+    function updateTimeTotal(html) {
+        g_timeTotal.innerHTML = html;
+        _showElement(g_time, true);
+    }
+
+    function updateTimeCurrent(value) {
+        if (g_IsUndefinedOrEmptyOrNull(value))
+            return;
+
+        g_timeCurrent.innerHTML = value.toFixed(2);
+        _showElement(g_time, true);
+    }
+
+    function updateInputProgress(value) {
+        g_inputProgress.value = value;
+    }
+
+    function updatePlayerState(status) {
+        var showPlay = true;
+        switch (status) {
+            case 'BUFFERING':
+            case 'PAUSED':
+            case 'IDLE':
+                showPlay = true;
+                break;
+            case 'PLAYING':
+                showPlay = false;
+                break;
+        }
+        _showElement(g_footerButtonPlay, showPlay);
+        _showElement(g_footerButtonPause, !showPlay);
+    }
+
+    function _updateNavbarTitle(text) {
+        g_navbarTitle.innerHTML = text;
+    }
+
+    function updateHeader(isReady) {
+        if (isReady === true)
+            _updateNavbarTitle(RESOURCES.TITLE_READY);
+        else
+            _updateNavbarTitle(RESOURCES.TITLE_INIT);
+
+        _showElement(g_headerConnectButton, !isReady);
+        _showElement(g_headerDisconnectButton, isReady);
+    }
+
+    function _showElement(element, shown) {
+        if (shown === true)
+            element.classList.remove('hidden');
+        else
+            element.classList.add('hidden');
+    }
+
+    return {
+        init: init,
+        renderPage: renderPage,
+        updateTimeTotal: updateTimeTotal,
+        updateInputProgress: updateInputProgress,
+        updateTimeCurrent: updateTimeCurrent,
+        updatePlayerState: updatePlayerState,
+        updateHeader: updateHeader
+    };
+}
+
+
+function CastModule() {
+
+    var PROGRESS_BAR_UPDATE_DELAY = 1000;
+    var g_PageHelper = null;
+    var g_progressFlag = 1;
+    var g_mediaCurrentTime = 0;
+    var g_autoplayWhenLoaded = true;
+    var g_currentMediaSession = null;
+    var g_session = null;
+    var g_timer = null;
+    var g_currentMedia = null;
+
+    function init(pageHelper) {
+        g_PageHelper = pageHelper;
+    }
+
+    function initializeCastApi() {
+        var applicationID = chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
+        var autoJoinPolicyArray = [
+            chrome.cast.AutoJoinPolicy.PAGE_SCOPED,
+            chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED,
+            chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+        ];
+
+        var sessionRequest = new chrome.cast.SessionRequest(applicationID);
+        var apiConfig = new chrome.cast.ApiConfig(sessionRequest,
+            _sessionListener,
+            _receiverListener,
+            autoJoinPolicyArray[1]
+        );
+        chrome.cast.initialize(apiConfig, _onInitSuccess, _onError);
+    }
+
+    function _onInitSuccess() {
+        if (g_IsUndefinedOrEmptyOrNull(media))
+            console.error('media is undef/null, or empty');
+        g_currentMedia = media[0];
+    }
+
+    function _sessionListener(e) {
+        g_session = e;
+        if (g_session.media.length !== 0)
+            _onMediaDiscovered('sessionListener', g_session.media[0]);
+
+        g_session.addMediaListener(_onMediaDiscovered.bind(this, 'addMediaListener'));
+        g_session.addUpdateListener(_sessionUpdateListener.bind(this));
+
+        if (g_session !== null)
+            _setLaunched();
+    }
+
+    function _onMediaDiscovered(how, mediaSession) {
+        g_currentMediaSession = mediaSession;
+        g_currentMediaSession.addUpdateListener(_onMediaStatusUpdate);
+        g_mediaCurrentTime = g_currentMediaSession.currentTime;
+        g_PageHelper.updatePlayerState(g_currentMediaSession.playerState);
+
+        if (!g_timer)
+            g_timer = setInterval(_updateCurrentTime.bind(this), PROGRESS_BAR_UPDATE_DELAY);
+    }
+
+    function _sessionUpdateListener(isAlive) {
+        if (!isAlive) {
+            g_session = null;
+
+            if (g_timer)
+                clearInterval(g_timer);
+            else
+                g_timer = setInterval(_updateCurrentTime.bind(this), PROGRESS_BAR_UPDATE_DELAY);
+        }
+    }
+
+    function _receiverListener(e) {
+        if (e === 'available')
+            console.log('receiver found');
+        else
+            console.log('receiver list empty');
+    }
+
+    function selectMedia(m) {
+        g_currentMedia = media[m];
+        loadMedia();
+    }
+
+    function launchApp() {
+        chrome.cast.requestSession(_onRequestSessionSuccess, _onLaunchError);
+        if (g_timer)
+            clearInterval(g_timer);
+    }
+
+    function _onRequestSessionSuccess(e) {
+        g_session = e;
+        g_session.addUpdateListener(_sessionUpdateListener.bind(this));
+        if (g_session.media.length != 0)
+            _onMediaDiscovered('onRequestSession', g_session.media[0]);
+
+        g_session.addMediaListener(_onMediaDiscovered.bind(this, 'addMediaListener'));
+        _setLaunched();
+    }
+
+    function _setLaunched() {
+        g_PageHelper.updateHeader(true);
+    }
+
+    function _onLaunchError() {
+        console.log('launch error');
+    }
+
+    function stopApp() {
+        if (g_IsUndefinedOrEmptyOrNull(g_session))
+            return;
+
+        g_session.stop(_onStopAppSuccess, _onError);
+        if (g_timer)
+            clearInterval(g_timer);
+    }
+
+    function _onStopAppSuccess() {
+        g_PageHelper.updateHeader(false);
+    }
+
+    function loadMedia() {
+        if (g_IsUndefinedOrEmptyOrNull(g_session))
+            return;
+
+        console.log(g_currentMedia.url);
+
+        var mediaInfo = new chrome.cast.media.MediaInfo(g_currentMedia.url);
+        mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
+        mediaInfo.metadata.metadataType = chrome.cast.media.MetadataType.GENERIC;
+        mediaInfo.contentType = 'video/mp4';
+        mediaInfo.metadata.title = g_currentMedia.title;
+        mediaInfo.metadata.images = [{
+            'url': g_currentMedia.img
+        }];
+
+        var request = new chrome.cast.media.LoadRequest(mediaInfo);
+        request.autoplay = g_autoplayWhenLoaded;
+        request.currentTime = 0;
+        g_session.loadMedia(request, _onMediaDiscovered.bind(this, 'loadMedia'), _onMediaError);
+    }
+
+    function _onMediaError(e) {
+        console.error('media error', e);
+    }
+
+    function _onMediaStatusUpdate(isAlive) {
+        if (isAlive) {
+            if (g_currentMediaSession.playerState === 'PLAYING') {
+                if (g_progressFlag) {
+                    var progress = _calculateProgress(g_currentMediaSession.currentTime, g_currentMediaSession.media.duration);
+                    g_PageHelper.updateInputProgress(progress);
+                    g_PageHelper.updateTimeCurrent(g_currentMediaSession.currentTime);
+                    g_PageHelper.updateTimeTotal(g_currentMediaSession.media.duration);
+                    g_progressFlag = 0;
+                }
+            }
+        }
+        g_PageHelper.updatePlayerState(g_currentMediaSession.playerState);
+    }
+
+
+    function _updateCurrentTime() {
+        if (g_IsUndefinedOrEmptyOrNull(g_session) || g_IsUndefinedOrEmptyOrNull(g_currentMediaSession))
+            return;
+
+        if (g_currentMediaSession.media && g_currentMediaSession.media.duration != null) {
+            var cTime = g_currentMediaSession.getEstimatedTime();
+            g_PageHelper.updateInputProgress(_calculateProgress(cTime, g_currentMediaSession.media.duration));
+            g_PageHelper.updateTimeCurrent(cTime);
+        } else {
+            g_PageHelper.updateInputProgress(0);
+            g_PageHelper.updateTimeCurrent(0);
+            if (g_timer)
+                clearInterval(g_timer);
+        }
+    }
+
+    function playMedia() {
+        if (!g_currentMediaSession)
+            return;
+        if (g_timer)
+            clearInterval(g_timer);
+
+        switch (g_currentMediaSession.playerState) {
+            case 'BUFFERING':
+            case 'PAUSED':
+                _actionPlayMedia();
+                break;
+            case 'IDLE':
+                // meh, need to be improved, we shouldn't have to reload the media
+                if (g_currentMediaSession.idleReason === "FINISHED")
+                    selectMedia(g_currentMedia.idx);
+                break;
+            case 'PLAYING':
+                _actionPauseMedia();
+                break;
+        }
+    }
+
+    function _actionPauseMedia() {
+        g_currentMediaSession.pause(null, null, _onError);
+    }
+
+    function _actionPlayMedia() {
+        g_currentMediaSession.play(null, null, _onError);
+        g_timer = setInterval(_updateCurrentTime.bind(this), PROGRESS_BAR_UPDATE_DELAY);
+    }
+
+    function stopMedia() {
+        if (g_IsUndefinedOrEmptyOrNull(g_currentMediaSession))
+            return;
+
+        g_currentMediaSession.stop(null, null, _onError);
+        if (g_timer)
+            clearInterval(g_timer);
+    }
+
+    function seekMedia(pos) {
+        if (g_IsUndefinedOrEmptyOrNull(g_currentMediaSession))
+            return;
+
+        g_progressFlag = 0;
+        var request = new chrome.cast.media.SeekRequest();
+        request.currentTime = pos * g_currentMediaSession.media.duration / 100;
+        g_currentMediaSession.seek(request, _onSeekSuccess.bind(this, 'media seek done'), _onError);
+    }
+
+    function _onSeekSuccess(info) {
+        setTimeout(function () {
+            g_progressFlag = 1
+        }, PROGRESS_BAR_UPDATE_DELAY);
+    }
+
+    function _onError(e) {
+        console.error('Error: ', e);
+    }
+
+    function _calculateProgress(currentTime, totalTime) {
+        return parseInt(100 * currentTime / totalTime);
+    }
+
+    return {
+        init: init,
+        initializeCastApi: initializeCastApi,
+        launchApp: launchApp,
+        stopApp: stopApp,
+        selectMedia: selectMedia,
+        loadMedia: loadMedia,
+        playMedia: playMedia,
+        stopMedia: stopMedia,
+        seekMedia: seekMedia
+    };
+}
+
+</script>
+
+</html>
